@@ -1,0 +1,78 @@
+
+@startuml
+autonumber
+
+actor Customer
+participant PayLink
+participant Biller
+participant WalletService
+participant NotificationSystem
+participant AuditService
+
+Customer -> PayLink: selectService()
+PayLink -> Biller: fetchServiceDetails()
+Biller --> PayLink: returnServiceDetails()
+
+PayLink -> Customer: requestBillDetails()
+Customer -> PayLink: submitBillDetails()
+
+PayLink -> Biller: validateBillDetails()
+Biller --> PayLink: returnBillAmount(amount)
+
+PayLink -> PayLink: calculateTransactionFee()
+PayLink -> Customer: displayPaymentSummary(totalAmount)
+
+Customer -> PayLink: confirmPayment()
+
+PayLink -> AuditService: recordAuditEvent("Payment Initiated")
+
+PayLink -> WalletService: verifyAvailableBalance(totalAmount)
+WalletService -> WalletService: checkAvailableBalance(totalAmount)
+
+alt Balance is sufficient
+    WalletService -> WalletService: holdFunds(totalAmount)
+    WalletService --> PayLink: balanceVerified(true)
+
+    PayLink -> AuditService: recordAuditEvent("Funds Held")
+
+    PayLink -> WalletService: deductFunds(totalAmount)
+    WalletService -> WalletService: withdrawHeldFunds(totalAmount)
+
+    PayLink -> AuditService: recordAuditEvent("Funds Deducted")
+
+    PayLink -> NotificationSystem: sendPaymentNotification()
+    NotificationSystem -> Customer: notifyPaymentProcessing()
+
+    PayLink -> Biller: processBillPayment(amount)
+
+    alt Bill payment successful
+        Biller --> PayLink: confirmPaymentSuccess()
+
+        PayLink -> AuditService: recordAuditEvent("Payment Successful")
+
+        PayLink -> Customer: displayTransactionComplete()
+
+    else Bill payment failed
+        Biller --> PayLink: confirmPaymentFailed()
+
+        PayLink -> AuditService: recordAuditEvent("Payment Failed")
+
+        PayLink -> WalletService: restoreFunds(totalAmount)
+
+        PayLink -> AuditService: recordAuditEvent("Funds Restored")
+
+        PayLink -> Customer: displayTransactionFailed()
+
+        PayLink -> NotificationSystem: sendNotification("Funds restored")
+        NotificationSystem -> Customer: notifyFundsRestored()
+    end
+
+else Insufficient balance
+    WalletService --> PayLink: balanceVerificationFailed()
+
+    PayLink -> AuditService: recordAuditEvent("Insufficient Balance")
+
+    PayLink -> Customer: displayPaymentFailed("Insufficient funds")
+end
+
+@enduml

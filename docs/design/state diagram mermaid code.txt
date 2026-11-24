@@ -1,0 +1,22 @@
+stateDiagram-v2
+    direction TB
+
+    [*] --> Initiated
+
+    Initiated --> FundsHeld: [fraud check passed && balance sufficient] / hold funds
+    Initiated --> Rejected: [fraud check failed || balance insufficient]
+
+    FundsHeld --> SentToBiller: send request to biller
+
+    SentToBiller --> Completed: biller confirms
+    SentToBiller --> Failed: biller refuses
+    SentToBiller --> Unknown: timeout expired
+
+    Unknown --> Completed: late confirmation (callback / retry / settlement)
+    Unknown --> Failed: late refusal / reconciliation finds no payment
+
+    Failed --> Refunded: release hold to wallet
+
+    Completed --> [*]
+    Rejected --> [*]
+    Refunded --> [*]

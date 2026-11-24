@@ -1,0 +1,148 @@
+
+@startuml PayLink_Domain_Diagram
+
+top to bottom direction
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam nodesep 35
+skinparam ranksep 55
+
+skinparam class {
+    BackgroundColor white
+    BorderColor #444444
+}
+
+' ================ CLASSES ================
+
+class Customer {
+    customerId
+    name
+    phone
+    verificationLevel
+    status
+}
+
+class Agent {
+    agentId
+    name
+    shopName
+}
+
+class Admin {
+    adminId
+    name
+}
+
+class SupportEmployee {
+    employeeId
+    name
+}
+
+class Wallet {
+    walletId
+    currency
+}
+
+class LedgerEntry {
+    entryId
+    amount
+    type
+    date
+}
+
+class Biller {
+    billerId
+    name
+    status
+}
+
+class BillerService {
+    serviceId
+    name
+    requiredFields
+}
+
+class Payment {
+    paymentId
+    billerReference
+    amount
+    fee
+    totalAmount
+    status
+    date
+}
+
+class Refund {
+    refundId
+    amount
+    reason
+    status
+}
+
+class Commission {
+    commissionId
+    amount
+}
+
+class AuditLog {
+    logId
+    action
+    date
+}
+
+class Reconciliation {
+    reconciliationId
+    date
+    status
+}
+
+' ================ RELATIONSHIPS ================
+
+Customer "1" -- "1" Wallet : owns
+
+Wallet "1" *-- "0..*" LedgerEntry : contains
+
+Customer "1" -- "0..*" Payment : makes
+
+Agent "0..1" -- "0..*" Payment : assists
+
+Biller "1" -- "1..*" BillerService : provides
+
+BillerService "1" -- "0..*" Payment : receives
+
+Payment "1" -- "0..*" Refund : has
+
+Customer "1" -- "0..*" Refund : creates
+
+Payment "1" -- "0..1" Commission : generates
+
+Agent "1" -- "1..*" Commission : earns
+
+Payment "1" -- "0..*" LedgerEntry : creates
+
+SupportEmployee "1" -- "0..*" Refund : reviews
+
+SupportEmployee "0..*" -- "0..*" Customer : blocks / unblocks
+
+SupportEmployee "1" -- "0..*" AuditLog : creates
+
+Customer "1" -- "0..*" AuditLog : activities
+
+Admin "1" -- "0..*" Biller : adds / edits
+
+Admin "1" -- "0..*" BillerService : adds / edits
+
+Admin "0..*" -- "0..*" Payment : views
+
+Admin "1" -- "0..*" AuditLog : creates
+
+Payment "1" -- "0..*" AuditLog : generates
+
+Biller "1" -- "0..*" Reconciliation : has
+
+Reconciliation "1" -- "0..*" Payment : checks
+
+@enduml

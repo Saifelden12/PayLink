@@ -1,0 +1,184 @@
+
+@startuml PayLink_ER_Diagram
+
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam entity {
+    BackgroundColor white
+    BorderColor #444444
+}
+
+' ================ ENTITIES ================
+
+entity Customer {
+    * customerId : INT <<PK>>
+    --
+    name : VARCHAR
+    phone : VARCHAR
+    verificationLevel : VARCHAR
+    status : VARCHAR
+}
+
+entity Agent {
+    * agentId : INT <<PK>>
+    --
+    name : VARCHAR
+    shopName : VARCHAR
+}
+
+entity Admin {
+    * adminId : INT <<PK>>
+    --
+    name : VARCHAR
+}
+
+entity SupportEmployee {
+    * employeeId : INT <<PK>>
+    --
+    name : VARCHAR
+}
+
+entity Wallet {
+    * walletId : INT <<PK>>
+    --
+    customerId : INT <<FK, UNIQUE>>
+    currency : VARCHAR
+}
+
+entity LedgerEntry {
+    * entryId : INT <<PK>>
+    --
+    walletId : INT <<FK>>
+    paymentId : INT <<FK, NULL>>
+    amount : DECIMAL
+    type : VARCHAR
+    date : DATETIME
+}
+
+entity Biller {
+    * billerId : INT <<PK>>
+    --
+    adminId : INT <<FK>>
+    name : VARCHAR
+    status : VARCHAR
+}
+
+entity BillerService {
+    * serviceId : INT <<PK>>
+    --
+    billerId : INT <<FK>>
+    adminId : INT <<FK>>
+    name : VARCHAR
+    requiredFields : TEXT
+}
+
+entity Payment {
+    * paymentId : INT <<PK>>
+    --
+    customerId : INT <<FK>>
+    serviceId : INT <<FK>>
+    agentId : INT <<FK, NULL>>
+    reconciliationId : INT <<FK, NULL>>
+    billerReference : VARCHAR
+    amount : DECIMAL
+    fee : DECIMAL
+    totalAmount : DECIMAL
+    status : VARCHAR
+    date : DATETIME
+}
+
+entity Refund {
+    * refundId : INT <<PK>>
+    --
+    paymentId : INT <<FK>>
+    customerId : INT <<FK>>
+    employeeId : INT <<FK, NULL>>
+    amount : DECIMAL
+    reason : TEXT
+    status : VARCHAR
+}
+
+entity Commission {
+    * commissionId : INT <<PK>>
+    --
+    paymentId : INT <<FK, UNIQUE>>
+    agentId : INT <<FK>>
+    amount : DECIMAL
+}
+
+entity AuditLog {
+    * logId : INT <<PK>>
+    --
+    paymentId : INT <<FK, NULL>>
+    adminId : INT <<FK, NULL>>
+    employeeId : INT <<FK, NULL>>
+    customerId : INT <<FK, NULL>>
+    action : VARCHAR
+    date : DATETIME
+}
+
+entity Reconciliation {
+    * reconciliationId : INT <<PK>>
+    --
+    billerId : INT <<FK>>
+    date : DATE
+    status : VARCHAR
+}
+
+entity CustomerStatusAction {
+    * statusActionId : INT <<PK>>
+    --
+    customerId : INT <<FK>>
+    employeeId : INT <<FK>>
+    action : VARCHAR
+    date : DATETIME
+}
+
+' ================ RELATIONSHIPS ================
+
+Customer ||--|| Wallet : owns
+
+Wallet ||--o{ LedgerEntry : contains
+
+Customer ||--o{ Payment : makes
+
+Agent |o--o{ Payment : assists
+
+Biller ||--|{ BillerService : provides
+
+BillerService ||--o{ Payment : receives
+
+Payment ||--o{ LedgerEntry : creates
+
+Payment ||--o{ Refund : has
+
+Customer ||--o{ Refund : creates
+
+SupportEmployee ||--o{ Refund : reviews
+
+Payment ||--o| Commission : generates
+
+Agent ||--|{ Commission : earns
+
+Admin ||--o{ Biller : adds / edits
+
+Admin ||--o{ BillerService : adds / edits
+
+Admin ||--o{ AuditLog : creates
+
+SupportEmployee ||--o{ AuditLog : creates
+
+Customer ||--o{ AuditLog : activities
+
+Payment ||--o{ AuditLog : generates
+
+Biller ||--o{ Reconciliation : has
+
+Reconciliation |o--o{ Payment : checks
+
+Customer ||--o{ CustomerStatusAction
+
+SupportEmployee ||--o{ CustomerStatusAction
+
+@enduml
