@@ -1,0 +1,196 @@
+@startuml PayLink_Use_Case_Diagram
+
+top to bottom direction
+skinparam dpi 100
+skinparam shadowing false
+skinparam nodesep 30
+skinparam ranksep 120
+skinparam packageStyle rectangle
+skinparam ArrowFontSize 11
+skinparam linetype ortho
+skinparam UsecaseFontSize 13
+skinparam ActorFontSize 14
+skinparam usecase {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+skinparam rectangle {
+  BackgroundColor #FAFAFA
+  BorderColor #555555
+}
+skinparam package {
+  FontSize 15
+  FontStyle bold
+}
+
+' ================= Primary Actors (left) =================
+actor "Customer" as Customer #1F6FEB
+actor "Agent" as Agent #2DA44E
+actor "Support\nEmployee" as Support #000000
+actor "Admin" as Admin #CF222E
+
+' ================= Secondary Actor (right) =================
+actor "Biller Systems\n(ElectroCo, AquaCo,\nTopUpNet, NetCo)" as Biller <<external>> #8250DF
+
+rectangle "PayLink System" {
+
+  ' ============ Module 1: Accounts and Wallet ============
+  package "Accounts and Wallet" #E8F1FB {
+    usecase "Register Account" as UC_Register
+    usecase "Upgrade Account\nto Verified" as UC_Upgrade
+    usecase "Block / Unblock Account" as UC_Block
+    usecase "View Wallet Balance &\nTransaction History" as UC_Balance
+    usecase "Top Up Wallet\n(Simulated Card / Agent Cash)" as UC_TopUp
+    usecase "Request Refund" as UC_Refund
+    usecase "Review & Approve Refund" as UC_ReviewRefund
+    usecase "Hold Funds" as UC_Hold
+    usecase "Record Ledger Entry" as UC_Ledger
+  }
+
+  ' ============ Module 2: Biller Catalog ============
+  package "Biller Catalog" #EAF7EA {
+    usecase "View Billers &\nRequired Fields" as UC_Billers
+    usecase "Manage Billers & Services\n(Add / Edit / Disable)" as UC_ManageBillers
+  }
+
+  ' ============ Module 3: Payment Processing ============
+  package "Payment Processing" #FFF4E0 {
+    usecase "Run Bill Inquiry" as UC_Inquiry
+    usecase "Pay Bill" as UC_Pay
+    usecase "Pay Bill on Behalf\nof Customer" as UC_AgentPay
+    usecase "Validate Limits" as UC_Limits
+    usecase "Block Account\n(Rate Limit Exceeded)" as UC_RateLimit
+    usecase "Search Payment by Reference\n& View Full History" as UC_Search
+    usecase "View Daily Totals" as UC_Totals
+    usecase "Write Audit Log Entry" as UC_AuditWrite
+  }
+
+  ' ============ Module 4: Biller Integration ============
+  package "Biller Integration" #F3E8FB {
+    usecase "Process TopUpNet\nCallback" as UC_Callback
+    usecase "Generate Daily\nReconciliation Report" as UC_Recon
+  }
+
+  ' ============ Module 5: Fees and Commissions ============
+  package "Fees and Commissions" #FDEAEA {
+    usecase "Calculate Fees" as UC_Fees
+    usecase "Calculate Agent\nCommission" as UC_Commission
+    usecase "Edit Fee & Limit Values" as UC_EditFees
+  }
+
+  ' ============ Module 6: Notifications ============
+  package "Notifications" #EDEDED {
+    usecase "Send Notification\n(SMS + Push)" as UC_Notify
+  }
+}
+
+' ================= Customer associations (Blue) =================
+Customer -[#1F6FEB,thickness=2]-> UC_Register
+Customer -[#1F6FEB,thickness=2]-> UC_Upgrade
+Customer -[#1F6FEB,thickness=2]-> UC_Balance
+Customer -[#1F6FEB,thickness=2]-> UC_TopUp
+Customer -[#1F6FEB,thickness=2]-> UC_Billers
+Customer -[#1F6FEB,thickness=2]-> UC_Inquiry
+Customer -[#1F6FEB,thickness=2]-> UC_Pay
+Customer -[#1F6FEB,thickness=2]-> UC_Refund
+
+' ================= Agent associations (Green) =================
+Agent -[#2DA44E,thickness=2]-> UC_AgentPay
+Agent -[#2DA44E,thickness=2]-> UC_TopUp
+
+' ================= Support associations (Black) =================
+Support -[#000000,thickness=2]-> UC_Search
+Support -[#000000,thickness=2]-> UC_Block
+Support -[#000000,thickness=2]-> UC_ReviewRefund
+
+' ================= Admin associations (Red) =================
+Admin -[#CF222E,thickness=2]-> UC_ManageBillers
+Admin -[#CF222E,thickness=2]-> UC_EditFees
+Admin -[#CF222E,thickness=2]-> UC_Totals
+
+' ================= Secondary actor associations (Purple) =================
+UC_Inquiry -[#8250DF,thickness=2]-> Biller
+UC_Pay -[#8250DF,thickness=2]-> Biller
+UC_Callback -[#8250DF,thickness=2]-> Biller
+UC_Recon -[#8250DF,thickness=2]-> Biller
+
+' ================= Include relationships (Gray) =================
+UC_Inquiry .[#888888].> UC_Fees : <<include>>
+
+UC_Pay .[#888888].> UC_Fees : <<include>>
+UC_Pay .[#888888].> UC_Limits : <<include>>
+UC_Pay .[#888888].> UC_Hold : <<include>>
+UC_Pay .[#888888].> UC_Ledger : <<include>>
+UC_Pay .[#888888].> UC_AuditWrite : <<include>>
+UC_Pay .[#888888].> UC_Notify : <<include>>
+
+UC_AgentPay .[#888888].> UC_Pay : <<include>>
+UC_AgentPay .[#888888].> UC_Commission : <<include>>
+
+UC_TopUp .[#888888].> UC_Ledger : <<include>>
+UC_TopUp .[#888888].> UC_AuditWrite : <<include>>
+
+' ================= Extend relationships (Gray) =================
+UC_RateLimit .[#888888].> UC_Pay : <<extend>>
+
+
+' ================= Layout helpers (hidden links to form a grid) =================
+' actors in one row
+Customer -[hidden]right- Agent
+Agent -[hidden]right- Admin
+Admin -[hidden]right- Support
+
+' Accounts and Wallet: 3 x 3
+UC_Register -[hidden]right- UC_Upgrade
+UC_Upgrade -[hidden]right- UC_Block
+UC_Balance -[hidden]right- UC_TopUp
+UC_TopUp -[hidden]right- UC_Refund
+UC_ReviewRefund -[hidden]right- UC_Hold
+UC_Hold -[hidden]right- UC_Ledger
+UC_Register -[hidden]down- UC_Balance
+UC_Balance -[hidden]down- UC_ReviewRefund
+
+' Payment Processing: 3 x 3
+UC_Inquiry -[hidden]right- UC_Pay
+UC_Pay -[hidden]right- UC_AgentPay
+UC_Limits -[hidden]right- UC_RateLimit
+UC_RateLimit -[hidden]right- UC_Search
+UC_Totals -[hidden]right- UC_AuditWrite
+UC_Inquiry -[hidden]down- UC_Limits
+UC_Limits -[hidden]down- UC_Totals
+
+' Accounts (left) next to Payment (right)
+UC_Block -[hidden]right- UC_Inquiry
+
+' Second row of modules
+UC_Billers -[hidden]right- UC_ManageBillers
+UC_Callback -[hidden]right- UC_Recon
+UC_Fees -[hidden]right- UC_Commission
+UC_Commission -[hidden]right- UC_EditFees
+UC_ManageBillers -[hidden]right- UC_Callback
+UC_Recon -[hidden]right- UC_Fees
+UC_EditFees -[hidden]right- UC_Notify
+
+UC_Hold -[hidden]down- UC_Billers
+UC_AuditWrite -[hidden]down- UC_Fees
+
+' ================= Notes =================
+note bottom of UC_Pay
+  Internal rules handled inside this use case:
+  - Idempotency key (FR-10)
+  - Payment life cycle (FR-11)
+  - Timeout -> Unknown -> re-query (FR-13)
+end note
+
+note bottom of UC_Notify
+  Failed notifications are retried
+  3 times, then marked undelivered
+  (FR-23)
+end note
+
+note bottom of UC_Recon
+  Generated by the system every night
+  from the biller's settlement file (FR-26)
+end note
+
+@enduml

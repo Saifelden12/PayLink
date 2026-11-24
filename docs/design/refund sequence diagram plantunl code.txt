@@ -1,0 +1,44 @@
+
+@startuml
+autonumber
+
+actor Customer
+participant PayLink
+participant RefundService
+actor "Support Employee" as SupportEmployee
+participant WalletService
+participant NotificationSystem
+participant AuditService
+
+Customer -> PayLink: requestRefund(paymentId, reason)
+
+PayLink -> RefundService: submitRefundRequest(paymentId, reason)
+
+RefundService -> AuditService: recordAuditEvent(customerId, requestId, "Refund Requested")
+
+SupportEmployee -> RefundService: getRefundRequests()
+
+RefundService -> RefundService: updateRequestStatus(requestId, "Under Review")
+
+RefundService --> SupportEmployee: returnRefundRequests(refundRequests)
+
+SupportEmployee -> SupportEmployee: reviewRefundRequest()
+
+SupportEmployee -> RefundService: updateRequestStatus(requestId, "Approved")
+
+RefundService -> RefundService: updateRefundRequestStatus(requestId, "Approved")
+
+RefundService -> AuditService: recordAuditEvent(employeeId, requestId, "Refund Approved")
+
+RefundService --> PayLink: refundApproved()
+
+PayLink -> WalletService: restoreFunds(amount)
+WalletService -> WalletService: restoreWalletBalance(amount)
+WalletService --> PayLink: fundsRestored()
+
+PayLink -> AuditService: recordAuditEvent(requestId, "Funds Restored")
+
+PayLink -> NotificationSystem: sendRefundNotification()
+NotificationSystem -> Customer: notifyRefundCompleted("Money Restored")
+
+@enduml
