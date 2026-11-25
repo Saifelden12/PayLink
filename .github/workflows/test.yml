@@ -1,11 +1,11 @@
-name: Test
+name: CI
 
 on:
   push:
   pull_request:
 
 jobs:
-  test:
+  ci:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -17,10 +17,16 @@ jobs:
         with:
           node-version: 20
 
-      - name: Start containers
-        run: docker compose up -d --build
+      - name: Build
+        run: docker compose build
 
-      - name: Run all tests
+      - name: Lint
+        run: npx --yes eslint@9 .
+
+      - name: Start containers
+        run: docker compose up -d
+
+      - name: Run tests
         run: node --test tests/
 
       - name: Show logs on failure
